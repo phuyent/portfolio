@@ -4,6 +4,11 @@
   <title>Huyen Tran Pham Portfolio</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="stylesheet" type="text/css" href="css/main.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@300..700&family=Work+Sans:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet">
 </head>
 <body>
     <!-- nav bar -->
@@ -22,14 +27,18 @@
       
     </div>
     
-    <div style="padding-left:16px">
-      <h2>Top Navigation with Right Aligned Links</h2>
-      <p>Some content..</p>
-    </div>
+
       </header>
 
   <!-- the main div -->
   <main>
+    <div id="canvas">
+      <h1 id="hey">VIBE CODING</h1>
+    </div>
+    <div style="padding-left:16px">
+      <h2>Top Navigation with Right Aligned Links</h2>
+      <p>Some content..</p>
+    </div>
     <ul>
       <li> About 
         <ul>
@@ -65,13 +74,221 @@
     </li>
 
     </ul>
+    <script>
+    const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setSize(window.innerWidth, window.innerHeight);
+document.getElementById('canvas').appendChild(renderer.domElement);
+
+const light = new THREE.PointLight(0xffffff, 1, 100);
+light.position.set(0, 0, 10);
+scene.add(light);
+
+// Gradient background
+const bgGeometry = new THREE.PlaneGeometry(100, 100);
+const bgMaterial = new THREE.ShaderMaterial({
+    uniforms: {
+        time: { value: 0 }
+    },
+    vertexShader: `
+        varying vec2 vUv;
+        void main() {
+            vUv = uv;
+            gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+        }
+    `,
+    fragmentShader: `
+        uniform float time;
+        varying vec2 vUv;
+        void main() {
+            vec2 uv = vUv;
+            vec3 color1 = vec3(0.8, 0.9, 1.0); // Light blue
+            vec3 color2 = vec3(1.0, 0.8, 0.9); // Light pink
+            vec3 color3 = vec3(1.0, 1.0, 0.8); // Light yellow
+            float n = sin(uv.x * 3.0 + time) * cos(uv.y * 3.0 + time * 0.5);
+            vec3 color = mix(color1, color2, uv.x + n * 0.1);
+            color = mix(color, color3, uv.y + n * 0.1);
+            gl_FragColor = vec4(color, 1.0);
+        }
+    `
+});
+const background = new THREE.Mesh(bgGeometry, bgMaterial);
+background.position.z = -10;
+scene.add(background);
+
+// Function to generate random position
+function getRandomPosition() {
+    const range = 3; // Adjust this value to change how far blobs can spawn from center
+    return new THREE.Vector3(
+        (Math.random() - 0.5) * range, // x: -range/2 to range/2
+        (Math.random() - 0.5) * range, // y: -range/2 to range/2
+        (Math.random() - 0.5) * 0.5    // z: small range for depth
+    );
+}
+
+// Blob creation function with inner glow
+function createBlob(scaleX, scaleY, scaleZ) {
+    const geometry = new THREE.SphereGeometry(1, 32, 32);
+    const material = new THREE.ShaderMaterial({
+        uniforms: {
+            time: { value: 0 }
+        },
+        vertexShader: `
+            uniform float time;
+            varying vec2 vUv;
+            varying vec3 vNormal;
+            void main() {
+                vUv = uv;
+                vNormal = normalize(normalMatrix * normal);
+                vec3 pos = position;
+                pos.x *= 1.0 + sin(time + pos.y) * 0.2;
+                pos.y *= 1.0 + cos(time + pos.x) * 0.2;
+                pos.z *= 1.0 + sin(time + pos.x + pos.y) * 0.2;
+                gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
+            }
+        `,
+        fragmentShader: `
+            varying vec2 vUv;
+            varying vec3 vNormal;
+            void main() {
+                vec3 color1 = vec3(0.6, 0.8, 1.0); // Blue
+                vec3 color2 = vec3(1.0, 0.6, 0.8); // Pink
+                vec3 color3 = vec3(1.0, 1.0, 0.6); // Yellow
+                vec3 color4 = vec3(1.0, 1.0, 1.0); // White
+                vec3 color = mix(color1, color2, vUv.x);
+                color = mix(color, color3, vUv.y);
+                color = mix(color, color4, (vUv.x + vUv.y) * 0.5);
+                float glow = pow(1.0 - dot(vNormal, vec3(0.0, 0.0, 1.0)), 2.0);
+                vec3 glowColor = vec3(1.0, 1.0, 1.0) * 0.15;
+                color += glowColor * glow;
+                gl_FragColor = vec4(color, 1.0);
+            }
+        `
+    });
+    const blob = new THREE.Mesh(geometry, material);
+    blob.scale.set(scaleX, scaleY, scaleZ);
+    blob.position.copy(getRandomPosition());
+    return blob;
+}
+
+// Create blobs with random positions
+const blobs = [
+    createBlob(2, 1.5, 1),    // Main blob
+    createBlob(0.8, 0.6, 0.5), // Mini blob 1
+    createBlob(0.6, 0.8, 0.5)  // Mini blob 2
+];
+blobs.forEach(blob => scene.add(blob));
+
+camera.position.z = 5;
+
+// Animation
+let time = 0;
+function animate() {
+    requestAnimationFrame(animate);
+    time += 0.02;
+
+    // Update blob animations
+    blobs.forEach((blob, index) => {
+        blob.material.uniforms.time.value = time/8;
+        blob.rotation.x += 0.001 * (index + 1);
+        blob.rotation.y += 0.001 * (index + 1);
+        blob.position.x += Math.sin(time + index) * 0.001;
+        blob.position.y += Math.cos(time + index) * 0.001;
+    });
+
+    // Update background
+    background.material.uniforms.time.value = time;
+
+    renderer.render(scene, camera);
+}
+animate();
+
+// Handle window resize
+window.addEventListener('resize', () => {
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+});
+
+const phrases = [
+  "Huyen Tran Pham",
+"Short bio",
+"Core values",
+"Keywords",
+"Skills",
+"Projects",
+"Transform ideas into digital experiences",
+"Stay curious and keep learning"
+];
+
+// Shuffle the phrases array
+function shuffleArray(array) {
+    for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+    }
+    return array;
+}
+
+const shuffledPhrases = shuffleArray(phrases);
+const heading = document.getElementById('hey');
+
+let currentPhraseIndex = 0;
+
+function typeWriterEffect(phrase, callback) {
+    let index = 0;
+    heading.textContent = '';
+
+    const type = () => {
+        if (index < phrase.length) {
+            heading.textContent += phrase.charAt(index);
+            index++;
+            setTimeout(type, 100); // Adjust typing speed here
+        } else {
+            setTimeout(() => {
+                deleteEffect(phrase, callback);
+            }, 10000); 
+        }
+    };
+
+    type();
+}
+
+function deleteEffect(phrase, callback) {
+    let index = phrase.length;
+
+    const del = () => {
+        if (index > 0) {
+            heading.textContent = phrase.substring(0, index - 1);
+            index--;
+            setTimeout(del, 90); // Adjust deleting speed here
+        } else {
+            callback();
+        }
+    };
+
+    del();
+}
+
+function cyclePhrases() {
+    typeWriterEffect(shuffledPhrases[currentPhraseIndex], () => {
+        currentPhraseIndex = (currentPhraseIndex + 1) % shuffledPhrases.length;
+        setTimeout(cyclePhrases, 1000);  
+    });
+}
+
+// Start cycling through phrases
+cyclePhrases();
+</script>
 </main>
+
+
+
   <!-- the footer div 
    This page is <strong>merely</strong> a template page. It contains only an <em> indication </em> for the content expected. You are FREE (and <strong>should</strong>) rewrite the markup, add a layout (css), images, styling etc ...-->
 <footer>
-<p>
-
-</p>
+<p></p>
 </footer>
 </body>
 </html>

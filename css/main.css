@@ -4,10 +4,26 @@ body {
   margin: 0;
   font-family: Arial, Helvetica, sans-serif;
 }
-
+@font-face {
+  font-family: 'Tan Pearl';
+  src: url(TAN-PEARL-Regular.ttf);
+}
+/* .quicksand-<uniquifier> { 
+  font-family: "Quicksand", sans-serif;
+  font-optical-sizing: auto;
+  font-weight: <weight>;
+  font-style: normal;
+}
+<weight>: Use a value from 300 to 700
+<uniquifier>: Use a unique and descriptive class name
+*/
 .topnav {
   overflow: hidden;
-  background-color:black;
+  background-color:#cda6e9;
+  font-family: 'Tan Pearl';
+  font-optical-sizing: auto;
+  font-weight: 300px;
+  font-style: normal;
 }
 
 .topnav a {
@@ -20,15 +36,69 @@ body {
 }
 
 .topnav a:hover {
-  background-color: #ddd;
-  color: black;
+  background-color: white;
+  color: #cda6e9;
 }
 
 .topnav a.active {
-  background-color: black;
+  background-color: #cda6e9;
   color: white;
 }
 
 .topnav-right {
   float: right;
+  font-family: "Quicksand", sans-serif;
+  font-optical-sizing: auto;
+  font-weight: 300px;
+  font-style: normal;
+}
+
+#canvas { 
+  width:100%;
+  min-height:100%;
+    position:relative;
+  &::after{
+    content:'';
+    position:absolute;
+  background: linear-gradient(45deg,  #edff2d 0%,#ff2bf7 43%,#3f14ff 79%,#14d0ff 100%);
+    background-size: 200% 200%;
+    animation: rotateGradient 10s linear infinite;
+    backdrop-filter:blur(3px);
+    mix-blend-mode:darken;
+    opacity:.3;
+    inset:0
+  }
+  #hey{
+    position:absolute; 
+    margin:45vh auto;  
+    text-align:center;
+    inset:0; 
+    font-family: "Quicksand", sans-serif;
+    color:#fffa;
+    font-size:4em;
+    letter-spacing:-.02em;
+    z-index:2;
+    text-shadow:0 0 16px #fffa; 
+    mix-blend-mode:hard-light;
+    line-height:1em;
+    min-height:5em;
+  }
+ 
+}
+@keyframes rotateGradient {
+    0% {
+        background-position: 0% 0%;
+    }
+    25% {
+        background-position: 100% 0%;
+    }
+    50% {
+        background-position: 100% 100%;
+    }
+    75% {
+        background-position: 0% 100%;
+    }
+    100% {
+        background-position: 0% 0%;
+    }
 }
